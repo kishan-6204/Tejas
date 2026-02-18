@@ -1,90 +1,65 @@
 import { useState } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
 import { motion } from 'framer-motion';
-import { auth } from '../firebase';
+import { useToast } from '../context/ToastContext';
+import { auth, googleProvider } from '../firebase';
 import { useAuth } from '../context/AuthContext';
-import ThemeToggle from '../components/ThemeToggle';
 
 export default function Login() {
-  const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { ensureUserDocument } = useAuth();
   const [formData, setFormData] = useState({ email: '', password: '' });
-  const [error, setError] = useState('');
+  const toast = useToast();
   const [loading, setLoading] = useState(false);
 
-  if (user) return <Navigate to="/dashboard" replace />;
+  const nextPath = location.state?.next || '/';
 
-  const onSubmit = async (event) => {
+  const signIn = async (event) => {
     event.preventDefault();
-    setError('');
     setLoading(true);
-
     try {
-      await signInWithEmailAndPassword(auth, formData.email, formData.password);
-      navigate('/dashboard');
-    } catch (err) {
-      setError(err.message);
+      const credential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
+      await ensureUserDocument(credential.user);
+      toast.success('Welcome back!');
+      navigate(nextPath, { replace: true });
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const googleSignIn = async () => {
+    setLoading(true);
+    try {
+      const credential = await signInWithPopup(auth, googleProvider);
+      await ensureUserDocument(credential.user);
+      toast.success('Signed in with Google');
+      navigate(nextPath, { replace: true });
+    } catch (error) {
+      toast.error(error.message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-4">
-      <motion.section
-        className="w-full max-w-md rounded-xl border border-slate-800 bg-slate-900/80 p-8 shadow-2xl"
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <div className="mb-6 flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-accent">Tejas</h1>
-            <p className="text-sm text-slate-400">Where speed meets focus.</p>
-          </div>
-          <ThemeToggle />
-        </div>
+    <main className="flex min-h-screen items-center justify-center px-4">
+      <motion.section className="w-full max-w-md rounded-xl border border-slate-800 bg-slate-900/80 p-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+        <h1 className="text-3xl font-bold text-cyan-300">Login</h1>
+        <p className="mb-6 text-sm text-slate-400">Where speed meets focus.</p>
 
-        <form className="space-y-4" onSubmit={onSubmit}>
-          <label className="block text-sm">
-            Email
-            <input
-              className="mt-1 w-full rounded border border-slate-700 bg-slate-950 px-3 py-2 outline-none focus:border-accent"
-              type="email"
-              value={formData.email}
-              onChange={(event) => setFormData((prev) => ({ ...prev, email: event.target.value }))}
-              required
-            />
-          </label>
-
-          <label className="block text-sm">
-            Password
-            <input
-              className="mt-1 w-full rounded border border-slate-700 bg-slate-950 px-3 py-2 outline-none focus:border-accent"
-              type="password"
-              value={formData.password}
-              onChange={(event) => setFormData((prev) => ({ ...prev, password: event.target.value }))}
-              required
-            />
-          </label>
-
-          {error ? <p className="text-xs text-rose-400">{error}</p> : null}
-
-          <button
-            className="w-full rounded bg-accent px-4 py-2 font-semibold text-slate-950 transition hover:brightness-110 disabled:opacity-50"
-            type="submit"
-            disabled={loading}
-          >
-            {loading ? 'Signing in...' : 'Login'}
-          </button>
+        <form onSubmit={signIn} className="space-y-4">
+          <input className="w-full rounded border border-slate-700 bg-slate-950 px-3 py-2" type="email" placeholder="Email" required value={formData.email} onChange={(event) => setFormData((prev) => ({ ...prev, email: event.target.value }))} />
+          <input className="w-full rounded border border-slate-700 bg-slate-950 px-3 py-2" type="password" placeholder="Password" required value={formData.password} onChange={(event) => setFormData((prev) => ({ ...prev, password: event.target.value }))} />
+          <button className="w-full rounded bg-cyan-300 px-4 py-2 font-semibold text-slate-900 disabled:opacity-50" type="submit" disabled={loading}>{loading ? 'Signing in...' : 'Login'}</button>
         </form>
 
-        <p className="mt-4 text-sm text-slate-400">
-          New here?{' '}
-          <Link to="/register" className="text-accent hover:underline">
-            Create account
-          </Link>
-        </p>
+        <button type="button" onClick={googleSignIn} disabled={loading} className="mt-3 w-full rounded border border-slate-600 px-4 py-2 text-sm">Continue with Google</button>
+
+        <p className="mt-4 text-sm text-slate-400">Need an account? <Link to="/register" state={{ next: nextPath }} className="text-cyan-300">Register</Link></p>
       </motion.section>
     </main>
   );

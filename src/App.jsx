@@ -1,76 +1,41 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
-import ProtectedRoute from './components/ProtectedRoute';
-import ThemeToggle from './components/ThemeToggle';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
+import LoadingSpinner from './components/LoadingSpinner';
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import Result from './pages/Result';
 import Typing from './pages/Typing';
 
-function Landing() {
-  const { user } = useAuth();
-
-  if (user) return <Navigate to="/dashboard" replace />;
-
+function PageWrap({ children }) {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-6 text-center">
-      <div className="absolute right-6 top-6">
-        <ThemeToggle />
-      </div>
-      <motion.h1
-        className="text-6xl font-bold tracking-tight text-accent"
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        TEJAS
-      </motion.h1>
-      <motion.p
-        className="mt-4 text-lg text-slate-300"
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-      >
-        Where speed meets focus.
-      </motion.p>
-      <motion.div className="mt-8 flex gap-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
-        <Link className="rounded bg-accent px-5 py-2 font-semibold text-slate-950" to="/register">
-          Get Started
-        </Link>
-        <Link className="rounded border border-slate-700 px-5 py-2" to="/login">
-          Login
-        </Link>
-      </motion.div>
-      <footer className="absolute bottom-6 text-xs text-slate-500">Tejas — Where speed meets focus.</footer>
-    </main>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+    >
+      {children}
+    </motion.div>
   );
 }
 
 export default function App() {
   const location = useLocation();
+  const { loading } = useAuth();
+
+  if (loading) return <LoadingSpinner label="Loading Tejas..." />;
 
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<Landing />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route
-          path="/dashboard"
-          element={(
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          )}
-        />
-        <Route
-          path="/typing"
-          element={(
-            <ProtectedRoute>
-              <Typing />
-            </ProtectedRoute>
-          )}
-        />
+        <Route path="/" element={<PageWrap><Typing /></PageWrap>} />
+        <Route path="/result" element={<PageWrap><Result /></PageWrap>} />
+        <Route path="/login" element={<PageWrap><Login /></PageWrap>} />
+        <Route path="/register" element={<PageWrap><Register /></PageWrap>} />
+        <Route path="/dashboard" element={<PageWrap><Dashboard /></PageWrap>} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AnimatePresence>
   );
