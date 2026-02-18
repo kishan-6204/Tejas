@@ -1,16 +1,36 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { auth } from '../firebase';
+import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { auth, db } from '../firebase';
 
 const AuthContext = createContext(null);
+
+async function ensureUserDocument(currentUser) {
+  const userRef = doc(db, 'users', currentUser.uid);
+  const snapshot = await getDoc(userRef);
+
+  if (!snapshot.exists()) {
+    await setDoc(userRef, {
+      uid: currentUser.uid,
+      email: currentUser.email,
+      joinedAt: serverTimestamp(),
+      bestWPM: 0,
+      averageAccuracy: 0,
+      testHistory: [],
+    });
+  }
+}
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
+      if (currentUser) {
+        await ensureUserDocument(currentUser).catch(() => {});
+      }
       setLoading(false);
     });
 
@@ -22,6 +42,7 @@ export function AuthProvider({ children }) {
       user,
       loading,
       logout: () => signOut(auth),
+      ensureUserDocument,
     }),
     [user, loading],
   );

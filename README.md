@@ -1,57 +1,82 @@
 # TEJAS
 
-> **Where speed meets focus.**
+**Tagline:** _Where speed meets focus._
 
-TEJAS is a premium dark, keyboard-first typing practice app built with React + Vite, Tailwind CSS, Firebase, Firestore, and Framer Motion.
+TEJAS is a modern, dark-themed typing practice web app inspired by the clean experience of Monkeytype (visual inspiration only). Users can type immediately with no login barrier, view full analytics after every test, and optionally sign in to save results and access history.
 
 ## Features
 
-- Email/password auth (register/login/logout)
-- Protected dashboard + typing routes
-- Typing test modes: **30s / 60s / 120s**
-- Live character-level correctness highlighting
-- Blinking caret and smooth page animations
-- WPM, accuracy, error, and timer stats
-- Save best WPM + accuracy history in Firestore
-- Restart shortcut: **Ctrl + R**
-- Theme toggle (dark/light)
-- Optional keypress sound
-- Responsive UI + loading/error states
+- Instant typing screen at `/` (no forced auth)
+- Unlimited tests for guests
+- Modes: **30s / 60s / 120s**
+- Character-level correctness rendering
+- Exact caret behavior (`caretIndex = typed.length`)
+- Timer starts on first keystroke
+- Auto-navigation to results when timer ends
+- Result analytics panel with:
+  - WPM
+  - Accuracy
+  - Raw WPM
+  - Character breakdown (correct / incorrect / extra / missed)
+  - Consistency
+  - Time
+- Animated performance graph:
+  - WPM (yellow line)
+  - Raw speed (gray line)
+  - Error markers (red dots)
+- Firebase Auth:
+  - Email/password login/register
+  - Google OAuth login
+  - Persistent auth session
+- Firestore persistence for profile + saved test history
+- Dashboard for authenticated users
+- Keyboard shortcuts:
+  - `Tab` / `Enter` → restart
+  - `Ctrl + R` → restart
+- Mobile responsive UI
+- Loading states + toast notifications
 
 ## Tech Stack
 
-- React 18 + Vite
+- React + Vite
 - Tailwind CSS
 - Firebase Authentication
 - Firebase Firestore
 - Framer Motion
 
+## Firestore User Schema
+
+`users/{uid}`
+
+```json
+{
+  "uid": "string",
+  "email": "string",
+  "joinedAt": "timestamp",
+  "bestWPM": 0,
+  "averageAccuracy": 0,
+  "testHistory": []
+}
+```
+
 ## Project Structure
 
 ```txt
 src/
- ├─ components/
- │   ├─ Caret.jsx
- │   ├─ LoadingSpinner.jsx
- │   ├─ ProtectedRoute.jsx
- │   ├─ Stats.jsx
- │   ├─ ThemeToggle.jsx
- │   ├─ TypingBox.jsx
- │   └─ WordRow.jsx
- ├─ context/
- │   ├─ AuthContext.jsx
- │   └─ ThemeContext.jsx
- ├─ hooks/
- │   └─ useTypingTest.js
- ├─ pages/
- │   ├─ Dashboard.jsx
- │   ├─ Login.jsx
- │   ├─ Register.jsx
- │   └─ Typing.jsx
- ├─ firebase.js
- ├─ App.jsx
- ├─ main.jsx
- └─ index.css
+ components/
+   TypingBox.jsx
+   Caret.jsx
+   Stats.jsx
+   ResultGraph.jsx
+ pages/
+   Typing.jsx
+   Result.jsx
+   Login.jsx
+   Register.jsx
+   Dashboard.jsx
+ firebase.js
+ App.jsx
+ main.jsx
 ```
 
 ## Setup
@@ -62,40 +87,30 @@ src/
 npm install
 ```
 
-2. Create env file:
+2. Copy environment template:
 
 ```bash
 cp .env.example .env
 ```
 
-3. Fill Firebase credentials in `.env`.
+3. Fill Firebase variables in `.env`.
 
-4. Run development server:
+4. Start development server:
 
 ```bash
 npm run dev
 ```
 
-5. Build production:
+5. Build production bundle:
 
 ```bash
 npm run build
 ```
 
-## Firestore User Document
-
-`users/{uid}` stores:
-
-- `uid`
-- `email`
-- `joinedAt`
-- `bestWPM`
-- `averageAccuracy`
-- `lastResult`
-- `accuracyHistory`
-
 ## Notes
 
-- Timer starts on first keystroke.
-- WPM formula: `(correctChars / 5) / minutes`
-- Accuracy formula: `(correct / totalTyped) * 100`
+- Guests can always complete tests and view analytics.
+- Save action is gated by authentication.
+- If unauthenticated users are on the result screen, they will see:
+  - “Sign in to save your result”
+  - Login/Register/Continue without saving options.
