@@ -4,7 +4,7 @@ export default function WordRow({ sourceText, typed }) {
   const caretIndex = typed.length;
 
   return (
-    <div className="min-h-36 rounded-xl border border-slate-800 bg-slate-900/70 p-6 text-xl leading-relaxed text-slate-500 md:text-2xl">
+    <div className="max-h-[140px] min-h-[140px] overflow-hidden rounded-xl border border-slate-800 bg-slate-900/70 p-5 text-xl leading-8 text-slate-500 break-words md:text-2xl">
       {sourceText.split('').map((character, index) => {
         const typedChar = typed[index];
         let style = 'text-slate-600';
@@ -14,7 +14,7 @@ export default function WordRow({ sourceText, typed }) {
         }
 
         return (
-          <span key={`${index}-${character}`} className={`relative whitespace-pre ${style}`}>
+          <span key={`${index}-${character}`} className={`relative whitespace-pre-wrap ${style}`}>
             {index === caretIndex ? <Caret /> : null}
             {character}
           </span>

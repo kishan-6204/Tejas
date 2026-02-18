@@ -7,7 +7,7 @@ import Stats from '../components/Stats';
 import { useTypingTest } from '../hooks/useTypingTest';
 import { useAuth } from '../context/AuthContext';
 
-const MODES = [30, 60, 120];
+const MODES = [15, 30, 60, 120];
 
 export default function Typing() {
   const { user } = useAuth();
@@ -15,6 +15,21 @@ export default function Typing() {
   const [mode, setMode] = useState(60);
   const toast = useToast();
   const { sourceText, typed, timeLeft, isComplete, metrics, timeline, elapsedSeconds, onType, restart } = useTypingTest(mode);
+
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      const shouldRestart = event.key === 'Tab' || event.key === 'Enter' || (event.ctrlKey && event.key.toLowerCase() === 'r');
+
+      if (!shouldRestart) return;
+
+      event.preventDefault();
+      restart();
+      toast.success('Test restarted');
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [restart, toast]);
 
   useEffect(() => {
     if (!isComplete) return;
